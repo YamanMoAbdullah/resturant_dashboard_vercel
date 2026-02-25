@@ -39,6 +39,9 @@ if (process.env.NODE_ENV !== 'production') {
         console.log("Server running on http://localhost:3000");
     });
 }
-
+/* ===== Route أساسي / ===== */
+app.get('/', (req, res) => {
+    res.send("Server is running!");
+});
 /* ===== Export for Vercel ===== */
 module.exports = app;
