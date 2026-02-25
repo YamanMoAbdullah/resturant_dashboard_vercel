@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Dashboard - Users</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    .pagination-controls .btn {
+      padding: 6px 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .pagination-controls .btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    .page-indicator {
+      font-weight: bold;
+    }
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      color: white;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .notification.success {
+      background-color: #28a745;
+    }
+    .notification.error {
+      background-color: #dc3545;
+    }
+    .page-access-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.show {
+      display: flex;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      font-size: 1.5rem;
+      color: #e67300;
+    }
+      .refresh-btn {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            margin-left: 8px;
+            margin-right: -1%;
+            color: #d3710f;
+            
+        }
+        .refresh-btn:hover {
+            color: #b65f08;
+        }
+  </style>
+</head>
+<body>
+
+  <div id="loader" style="display: none;">
+    <i class="fas fa-spinner fa-spin"></i> Loading...
+  </div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3>🍽️ RestaurantPro</h3>
+    </div>
+    <ul class="sidebar-menu">
+      <li>
+        <a href="/admin/dashboard">
+          <i class="fas fa-chart-bar"></i>
+          <span>Dashboard</span>
+        </a>
+      </li>
+      <li>
+        <a href="/admin/orders">
+          <i class="fas fa-shopping-cart"></i>
+          <span>Orders</span>
+        </a>
+      </li>
+      <li>
+        <a href="/admin/menu-items">
+          <i class="fas fa-utensils"></i>
+          <span>Menu Items</span>
+        </a>
+      </li>
+      <li>
+        <a href="/admin/categories">
+          <i class="fas fa-tags"></i>
+          <span>Categories</span>
+        </a>
+      </li>
+      <li>
+        <a href="/admin/users" class="active">
+          <i class="fas fa-users"></i>
+          <span>Users</span>
+        </a>
+      </li>
+      <li>
+        <a href="#" onclick="handleLogout()">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="toggle-btn" onclick="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title">Users Management</h1>
+      </div>
+      <div class="header-right">
+        <div class="user-menu">
+          <div class="user-avatar" onclick="toggleUserMenu()">
+            <span id="userInitials">A</span>
+          </div>
+          <div class="dropdown-menu" id="userDropdown">
+            <a href="#" onclick="handleLogout()">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="content">
+      <!-- Permission Notice -->
+      <div id="permissionNotice" class="card" style="margin-bottom: 20px; display: none;">
+        <div class="card-body">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <i class="fas fa-info-circle" style="color: #3498db; font-size: 1.5rem;"></i>
+            <div>
+              <h4 style="margin: 0; color: #2c3e50;">View Only Access</h4>
+              <p style="margin: 5px 0 0 0; color: #7f8c8d;">You can view user information but cannot make changes. Contact a Super Administrator for user management.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Access Controls (Super Admin Only) -->
+      <div id="pageAccessControls" class="card" style="margin-bottom: 20px; display: none;">
+        <div class="card-body">
+          <!-- Page access controls will be populated by JavaScript -->
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">All Users</h2>
+          <div class="toolbar">
+          <button id="loadar_orders" class="refresh-btn" title="Refresh Orders" onclick="refreshOrders()">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" class="form-control" placeholder="Search users..." onkeyup="searchUsers(this.value)">
+            </div>
+            <select class="form-control" style="width: auto;" onchange="filterByRole(this.value)">
+              <option value="">All Roles</option>
+              <option value="superAdmin">Super Admin</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+            <button class="btn btn-primary" id="addUserBtn" onclick="openUserModal()">
+              <i class="fas fa-plus"></i> Add User
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table class="table" id="usersTable">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Join Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Users will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        <div id="paginationControls" class="pagination-controls" style="display: flex; justify-content: center; align-items: center; gap: 1rem; padding: 1rem;"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- User Modal -->
+  <div class="modal" id="userModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="userModalTitle">Add User</h2>
+        <button class="close-btn" onclick="closeUserModal()">&times;</button>
+      </div>
+      <form id="userForm" onsubmit="saveUser(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input type="text" class="form-control" id="userName" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="userEmail" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Role</label>
+            <select class="form-control" id="userRole" required>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+              <option value="superAdmin">Super Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="pageAccessGroup">
+          <label class="form-label">Page Access</label>
+          <div class="page-access-list">
+            <label><input type="checkbox" class="page-access-checkbox" data-page="/admin/dashboard" checked> Dashboard</label>
+            <label><input type="checkbox" class="page-access-checkbox" data-page="/admin/users" checked> Users</label>
+            <label><input type="checkbox" class="page-access-checkbox" data-page="/admin/orders" checked> Orders</label>
+            <label><input type="checkbox" class="page-access-checkbox" data-page="/admin/categories" checked> Categories</label>
+            <label><input type="checkbox" class="page-access-checkbox" data-page="/admin/menu-items" checked> Menu Items</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-control" id="userPassword" minlength="8">
+          <small class="form-text text-muted">Minimum 8 characters. Leave empty to keep current password (for editing).</small>
+        </div>
+        <div class="form-group">
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save User
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/main.js"></script>
+  <script type="module" src="/js/users.js"></script>
+  <script src="/js/isLoggedIn.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+      const userName = localStorage.getItem("userName");
+      if (userName) {
+        document.getElementById("userInitials").textContent = userName.charAt(0).toUpperCase();
+      }
+    </script>
+</body>
+</html>
