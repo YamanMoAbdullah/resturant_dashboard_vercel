@@ -41,7 +41,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 /* ===== Route أساسي / ===== */
 app.get('/', (req, res) => {
-    res.send("Server is running!");
+    res.render('login');
 });
 /* ===== Export for Vercel ===== */
 module.exports = app;
